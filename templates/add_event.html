@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-bottom: 20px;">
+    <div>
+        <label for="league">league</label><br>
+        <select id="league" style="padding:6px; width:160px; margin-top:4px;" onchange="updateMarketTypes()">
+            {% for league in leagues %}
+                <option value="{{ league }}">{{ league | lower }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <label for="market_type">market type</label><br>
+        <select id="market_type" style="padding:6px; width:160px; margin-top:4px;">
+            {% for mt in market_types %}
+                <option value="{{ mt }}">{{ mt | lower }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button onclick="loadEvents()" style="padding:6px 16px; height:32px;">search</button>
+    <button onclick="removeExistingEvents()" style="padding:6px 16px; height:32px;">clear all</button>
+</div>
+
+<div id="events-list"></div>
+
+<style>
+    label {
+        font-size: 0.85em;
+        color: #555;
+    }
+
+    .event-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+        font-size: 0.9em;
+    }
+
+    .event-row:last-child {
+        border-bottom: none;
+    }
+
+    .event-time {
+        color: #888;
+        white-space: nowrap;
+        min-width: 140px;
+    }
+
+    .event-teams {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .event-teams b {
+        display: block;
+    }
+
+    .event-meta {
+        font-size: 0.8em;
+        color: #aaa;
+        margin-top: 2px;
+    }
+
+    .event-match {
+        color: #aaa;
+        font-size: 0.8em;
+        white-space: nowrap;
+    }
+
+    .add-btn {
+        padding: 4px 12px;
+        font-size: 0.85em;
+        border: 1px solid black;
+        border-radius: 4px;
+        cursor: pointer;
+        background: white;
+        white-space: nowrap;
+    }
+
+    .add-btn:hover {
+        background: #f5f5f5;
+    }
+
+    @media (max-width: 600px) {
+        .event-time {
+            min-width: unset;
+            width: 100%;
+        }
+        .event-match {
+            width: 100%;
+        }
+    }
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const LEAGUE_IDS = {{ league_ids | tojson }};
+
+    function updateMarketTypes() {
+        const league = document.getElementById("league").value;
+        const marketTypeSelect = document.getElementById("market_type");
+        const allowedTypes = LEAGUE_IDS[league]?.market_types || [];
+
+        marketTypeSelect.innerHTML = "";
+        allowedTypes.forEach(mt => {
+            const option = document.createElement("option");
+            option.value = mt;
+            option.textContent = mt.toLowerCase();
+            marketTypeSelect.appendChild(option);
+        });
+    }
+
+    // run on page load to initialize market types for default league
+    updateMarketTypes();
+
+    async function loadEvents() {
+        const league = document.getElementById("league").value;
+        const marketType = document.getElementById("market_type").value;
+
+        try {
+            const response = await fetch(`/get_events?league=${encodeURIComponent(league)}&market_type=${encodeURIComponent(marketType)}`);
+            const data = await response.json();
+
+            const list = document.getElementById("events-list");
+            list.innerHTML = "";
+
+            if (!data.events || data.events.length === 0) {
+                list.innerHTML = "<p style='color:#888'>no events found.</p>";
+                return;
+            }
+
+            data.events.forEach(event => {
+                const row = document.createElement("div");
+                row.className = "event-row";
+
+                row.innerHTML = `
+                    <span class="event-time">
+                        <span style="font-size:0.85em">kalshi: ${event.kalshi_date}</span><br>
+                        <span style="font-size:0.85em">boltodds: ${event.boltodds_datetime}</span>
+                    </span>
+                    <span class="event-teams">
+                        <b>${event.boltodds_comp}</b>
+                        <span class="event-meta">${event.league} · ${event.market_type} · ${event.kalshi_event_ticker}</span>
+                    </span>
+                    <span class="event-match">match ${(event.match_score * 100).toFixed(0)}%</span>
+                `;
+
+                const btn = document.createElement("button");
+                btn.className = "add-btn";
+                btn.textContent = "+ add";
+                btn.addEventListener("click", () => addEvent(event));
+                row.appendChild(btn);
+
+                list.appendChild(row);
+            });
+
+        } catch (err) {
+            console.error("failed to load events:", err);
+            document.getElementById("events-list").innerHTML = "<p style='color:#888'>error loading events.</p>";
+        }
+    }
+
+    async function removeExistingEvents() {
+        try {
+            const response = await fetch('/unsubscribe_all', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            });
+            const result = await response.json();
+            if (!response.ok) alert(`error: ${result.message || 'failed to unsubscribe'}`);
+        } catch (err) {
+            console.error(err);
+            alert("connection error");
+        }
+    }
+
+    async function addEvent(event) {
+        const marketType = document.getElementById("market_type").value;
+        if (!marketType) {
+            alert("market type must be set");
+            return;
+        }
+
+        try {
+            const response = await fetch('/add_event_to_bot', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...event, market_type: marketType })
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                alert(`added: ${event.kalshi_event_ticker}`);
+            } else {
+                alert(`error: ${result.message || 'failed to add event'}`);
+            }
+        } catch (err) {
+            console.error(err);
+            alert("connection error");
+        }
+    }
+</script>
+{% endblock %}

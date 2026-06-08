@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{% if rows|length == 0 %}
+    <p style="color:#888">no data.</p>
+{% else %}
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    {% for col in cols %}
+                        <th>{{ col }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                    <tr>
+                        {% for col in cols %}
+                            <td>{{ row[col] }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}
+
+<style>
+    .data-table {
+        border-collapse: collapse;
+        font-size: 0.85em;
+        width: 100%;
+    }
+    .data-table th,
+    .data-table td {
+        padding: 6px 12px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+        white-space: nowrap;
+    }
+    .data-table th {
+        color: #888;
+        font-weight: normal;
+        font-size: 0.9em;
+    }
+    .data-table tr:hover td {
+        background: #fafafa;
+    }
+</style>
+
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block content %}
+    
+    <p><strong>cash:</strong> ${{ (portfolio.balance / 100) }}</p>
+    <p><strong>positions:</strong> ${{ (portfolio.portfolio_value / 100) }}</p>
+    <p><strong>total:</strong> ${{ ((portfolio.balance + portfolio.portfolio_value) / 100)  }}</p>
+    
+{% endblock %}

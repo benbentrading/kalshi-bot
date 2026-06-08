@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{% if events|length == 0 %}
+    <p style="color:#888">no active events. add some <a href="/add_event">here</a>.</p>
+{% else %}
+    <div id="events-list">
+        {% for event in events %}
+            <div class="event-row" id="event-{{ event.kalshi_event_ticker }}">
+                <span class="event-info">
+                    <small class="subheading"><i>{{ event.boltodds.league }}</i></small>
+                    <span class="event-main">
+                        <b>{{ event.boltodds.game_id }}</b> -
+                        <span class="event-type">{{ event.boltodds.market_type }}</span>
+                    </span>
+                    <small class="subheading"><i>{{ event.kalshi_event_ticker }}</i></small>
+                </span>
+                <button class="remove-btn" onclick="removeEvent('{{ event.kalshi_event_ticker }}')">remove</button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<style>
+    .event-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+        font-size: 0.9em;
+    }
+
+    .event-row:last-child {
+        border-bottom: none;
+    }
+
+    .event-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .event-main {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+    }
+
+    .event-type {
+        color: #555;
+    }
+
+    .subheading{
+        color: #aaa;
+        font-size: 0.8em;
+    }
+
+    .remove-btn {
+        padding: 4px 12px;
+        font-size: 0.85em;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        cursor: pointer;
+        background: white;
+        white-space: nowrap;
+        color: #888;
+    }
+
+    .remove-btn:hover {
+        border-color: black;
+        color: black;
+    }
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function removeEvent(kalshiEventTicker) {
+        try {
+            const response = await fetch('/remove_event_from_bot', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ kalshi_event_ticker: kalshiEventTicker })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                const row = document.getElementById(`event-${kalshiEventTicker}`);
+                if (row) row.remove();
+            } else {
+                alert(`error: ${result.message || 'failed to remove event'}`);
+            }
+        } catch (err) {
+            console.error(err);
+            alert("connection error");
+        }
+    }
+</script>
+{% endblock %}

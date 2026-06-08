@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+    {% if grouped_markets|length == 0 %}
+        <b>no markets at this time. add some <a href="/add_event">here</a></b>
+    {% else %}
+        <div class="markets-wrapper">
+            {% for event_ticker, markets in grouped_markets.items() %}
+                <details class="event-group" open>
+                    <summary>
+                        <span style="font-weight:bold">{{ group_headers[event_ticker].boltodds_id }} >> {{ group_headers[event_ticker].market_type }}</span>
+                        <span style="color:#aaa; font-size:0.85em">
+                            · {{ markets|length }} market{{ 's' if markets|length != 1 }}
+                        </span>
+                        <span class="live-count" style="color: #4caf50;">
+                            {% set live = markets | selectattr('trading_venue', 'equalto', 'prod') | list %}
+                            {% if live | length > 0 %} · {{ live | length }} live{% endif %}
+                        </span>
+                    </summary>
+
+                    <div class="event-markets">
+                        {% for market in markets %}
+                            <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                <div class="market {% if market.trading_venue == 'prod' %}market-live{% endif %}" id="{{ market.kalshi_ticker }}">
+                                    {% if market.trading_venue == 'prod' %}
+                                        <span class="live-badge">LIVE</span>
+                                    {% endif %}
+                                    <small class="kalshi-market-ticker"><i>{{ market.kalshi_ticker }}</i></small>
+                                    <b class="kalshi-description">{{ market.game_description }}</b>
+
+                                    {% if market.position_ctx != 0 or market.realized_pnl != 0 %}
+                                        <small class="kalshi-position" data-field="position">
+                                            position: {{ market.position_ctx | format_number }} @ {{ market.cost_basis_per_share | format_number }}
+                                        </small>
+                                        <small class="kalshi-pnl" data-field="pnl">
+                                            pnl: ${{ market.realized_pnl | format_number }}
+                                        </small>
+                                    {% endif %}
+
+                                    <div class="market-table-wrapper">
+                                        <table class="market-table">
+                                            <thead>
+                                                <tr>
+                                                    <th></th>
+                                                    <th>bid ctx</th>
+                                                    <th>bid px</th>
+                                                    <th></th>
+                                                    <th>ask px</th>
+                                                    <th>ask ctx</th>
+                                                    <th>updated</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr data-row="kalshi">
+                                                    <td class="row-label">kalshi</td>
+                                                    <td data-field="kalshi-bid-ctx">{{ market.kalshi_yes_best_bid_ctx }}</td>
+                                                    <td data-field="kalshi-bid-px">{{ market.kalshi_yes_best_bid | format_number }}</td>
+                                                    <td>/</td>
+                                                    <td data-field="kalshi-ask-px">{{ market.kalshi_no_best_bid | format_number(subtract_from=1) }}</td>
+                                                    <td data-field="kalshi-ask-ctx">{{ market.kalshi_no_best_bid_ctx }}</td>
+                                                    <td data-field="kalshi-updated" class="updated">{{ market.kalshi_last_update }}</td>
+                                                </tr>
+                                                <tr data-row="vegas">
+                                                    <td class="row-label">vegas</td>
+                                                    <td></td>
+                                                    <td data-field="vegas-bid-px">{{ market.vegas_yes_bid | format_number }}</td>
+                                                    <td>/</td>
+                                                    <td data-field="vegas-ask-px">{{ market.vegas_no_bid | format_number(subtract_from=1) }}</td>
+                                                    <td></td>
+                                                    <td data-field="vegas-updated" class="updated">{{ market.boltodds_last_update }}</td>
+                                                </tr>
+                                                <tr data-row="bot">
+                                                    <td class="row-label">bot</td>
+                                                    <td data-field="bot-bid-ctx">{{ market.yes_order.ctx }}</td>
+                                                    <td data-field="bot-bid-px">{{ market.yes_order.px | format_number }}</td>
+                                                    <td>/</td>
+                                                    <td data-field="bot-ask-px">{{ market.no_order.px | format_number(subtract_from=1) }}</td>
+                                                    <td data-field="bot-ask-ctx">{{ market.no_order.ctx }}</td>
+                                                    <td data-field="bot-updated" class="updated">{{ market.kalshi_last_update }}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <small data-field="last-px" class="last-px">last px: {{ market.kalshi_last_px }} at {{ market.kalshi_last_trade_time }}</small>
+
+                                    <!-- controls dropdown -->
+                                    <details class="market-controls">
+                                        <summary class="controls-toggle">controls</summary>
+                                        <div class="controls-body">
+                                            <div class="control-section">
+                                                <span class="control-label">trading</span>
+                                                <div class="venue-btns">
+                                                    <button class="venue-btn on" onclick="setTradingVenue('{{ market.kalshi_ticker }}', 'prod')">kalshi ON</button>
+                                                    <button class="venue-btn off" onclick="setTradingVenue('{{ market.kalshi_ticker }}', 'none')">kalshi OFF</button>
+                                                </div>
+                                            </div>
+                                            <div class="control-section">
+                                                <span class="control-label">max position ctx</span>
+                                                <div class="ctx-input-row">
+                                                    <input
+                                                        class="ctx-input"
+                                                        type="number"
+                                                        min="0"
+                                                        step="1"
+                                                        placeholder="{{ market.max_position_ctx if market.max_position_ctx else 'unlimited' }}"
+                                                        id="ctx-input-{{ market.kalshi_ticker }}"
+                                                    >
+                                                    <button class="ctx-btn" onclick="setMaxPositionCtx('{{ market.kalshi_ticker }}')">set</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </details>
+
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </details>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/trade.css') }}">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
+<script src="{{ url_for('static', filename='js/trade.js') }}"></script>
+{% endblock %}

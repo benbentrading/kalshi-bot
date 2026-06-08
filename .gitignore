@@ -1,0 +1,21 @@
+# env files
+.env
+.env.dev
+.env.prod
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# database
+data/
+
+# cloudflared credentials (keep config.yml but not the json)
+*.json
+!assets/json/universe.json
+
+# mac
+.DS_Store

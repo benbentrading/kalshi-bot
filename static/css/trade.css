@@ -1,0 +1,254 @@
+.markets-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 20px;
+    max-width: 100%;
+}
+
+.event-group {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.event-group summary {
+    padding: 10px 16px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.95em;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fafafa;
+    border-bottom: 1px solid #eee;
+}
+
+.event-group summary::-webkit-details-marker { display: none; }
+
+.event-group summary::before {
+    content: '▶';
+    font-size: 0.7em;
+    color: #aaa;
+    transition: transform 0.2s;
+}
+
+.event-group[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.event-markets {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+}
+
+.market {
+    border: 2px solid black;
+    border-radius: 8px;
+    padding: 12px;
+    background-color: white;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.market small {
+    display: block;
+    color: #555;
+    margin-bottom: 4px;
+}
+
+.market b {
+    display: block;
+    margin: 6px 0;
+    font-size: 1.05em;
+}
+
+.market-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.market-table {
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 0.85em;
+    width: 100%;
+    min-width: 0;
+}
+
+.market-table th,
+.market-table td {
+    padding: 4px 6px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+    white-space: nowrap;
+}
+
+.market-table th {
+    color: #888;
+    font-weight: normal;
+    font-size: 0.85em;
+}
+
+.row-label {
+    text-align: left;
+    color: #555;
+    font-size: 0.85em;
+}
+
+.market-table td:nth-child(4) { color: #aaa; }
+
+.last-px { margin-top: 8px; }
+
+.edge { background-color: #e6f4ea; }
+
+.updated {
+    color: #aaa;
+    font-size: 0.8em;
+    white-space: nowrap;
+}
+
+.venue-btns {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.venue-btn {
+    padding: 5px 12px;
+    font-size: 0.8em;
+    border: 1px solid black;
+    border-radius: 4px;
+    cursor: pointer;
+    background: white;
+    white-space: nowrap;
+}
+
+.venue-btn.on:hover  { background-color: #e6f4ea; }
+.venue-btn.off:hover { background-color: #f5f5f5; }
+
+.market-live { border-color: #2e7d32 !important; }
+
+.live-badge {
+    display: inline-block;
+    color: #2e7d32;
+    font-weight: bold;
+    font-size: 0.8em;
+    margin-bottom: 4px;
+}
+
+.live-badge::before {
+    content: '●';
+    display: inline-block;
+    margin-right: 4px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%   { opacity: 1; }
+    50%  { opacity: 0.2; }
+    100% { opacity: 1; }
+}
+
+/* ----------------------------- */
+/*  controls dropdown            */
+/* ----------------------------- */
+
+.market-controls {
+    margin-top: 10px;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.market-controls summary::-webkit-details-marker { display: none; }
+
+.controls-toggle {
+    padding: 6px 10px;
+    font-size: 0.8em;
+    color: #888;
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #fafafa;
+    user-select: none;
+}
+
+.controls-toggle::before {
+    content: '▶';
+    font-size: 0.65em;
+    color: #bbb;
+    transition: transform 0.15s;
+}
+
+.market-controls[open] .controls-toggle::before {
+    transform: rotate(90deg);
+}
+
+.controls-body {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border-top: 1px solid #eee;
+}
+
+.control-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.control-label {
+    font-size: 0.75em;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.ctx-input-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.ctx-input {
+    width: 80px;
+    padding: 4px 8px;
+    font-size: 0.85em;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    outline: none;
+}
+
+.ctx-input:focus {
+    border-color: #888;
+}
+
+.ctx-btn {
+    padding: 4px 12px;
+    font-size: 0.8em;
+    border: 1px solid black;
+    border-radius: 4px;
+    cursor: pointer;
+    background: white;
+    white-space: nowrap;
+}
+
+.ctx-btn:hover { background-color: #f0f0f0; }
+
+/* ----------------------------- */
+/*  mobile                       */
+/* ----------------------------- */
+
+@media (max-width: 600px) {
+    .market { padding: 10px; }
+    .venue-btns { flex-direction: row; }
+    .updated { display: none; }
+    .market-table th:last-child { display: none; }
+    .market-table { font-size: 0.78em; }
+}

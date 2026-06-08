@@ -1,0 +1,109 @@
+{
+  "LEAGUE_IDS": {
+    "mlb": {
+      "kalshi": "KXMLB",
+      "boltodds": "MLB",
+      "market_types": ["spread", "total", "f5_spread", "f5_total", "team_total"],
+      "odds_source": "draftkings"
+    },
+    "nba": {
+      "kalshi": "KXNBA",
+      "boltodds": "NBA",
+      "market_types": ["spread", "total"],
+      "odds_source": "draftkings"
+    },
+    "nhl": {
+      "kalshi": "KXNHL",
+      "boltodds": "NHL",
+      "market_types": ["spread", "total"],
+      "odds_source": "draftkings"
+    },
+    "ncaab": {
+      "kalshi": "KXNCAAMB",
+      "boltodds": "NCAAB",
+      "market_types": ["spread", "total"],
+      "odds_source": "draftkings"
+    },
+    "atp": {
+      "kalshi": "KXATP",
+      "boltodds": "Tennis",
+      "market_types": ["set_winner", "game_total", "game_spread", "match_winner"],
+      "odds_source": "fanduel"
+    },
+    "ahl": {
+      "kalshi": "KXAHL",
+      "boltodds": "AHL",
+      "market_types": ["moneyline"],
+      "odds_source": "draftkings"
+    }
+  },
+
+  "MARKET_TYPES": {
+    "moneyline": {
+      "kalshi": "GAME",
+      "boltodds": "Moneyline",
+      "is_team": true,
+      "is_strike": false
+    },
+    "spread": {
+      "kalshi": "SPREAD",
+      "boltodds": "Spread",
+      "is_team": true,
+      "is_strike": true
+    },
+    "f5_spread": {
+      "kalshi": "F5SPREAD",
+      "boltodds": "1st 5 Innings Spread",
+      "is_team": true,
+      "is_strike": true
+    },
+    "f5_moneyline": {
+      "kalshi": "F5",
+      "boltodds": "1st 5 Innings Moneyline",
+      "is_team": true,
+      "is_strike": false
+    },
+    "total": {
+      "kalshi": "TOTAL",
+      "boltodds": "Total",
+      "is_team": false,
+      "is_strike": true
+    },
+    "f5_total": {
+      "kalshi": "F5TOTAL",
+      "boltodds": "1st 5 Innings Total",
+      "is_team": false,
+      "is_strike": true
+    },
+    "set_winner": {
+      "kalshi": "SETWINNER",
+      "boltodds": ["Moneyline"],
+      "is_team": true,
+      "is_strike": false
+    },
+    "match_winner": {
+      "kalshi": "MATCH",
+      "boltodds": ["S1 Moneyline", "S2 Moneyline"],
+      "is_team": true,
+      "is_strike": false
+    },
+    "game_total": {
+      "kalshi": "GTOTAL",
+      "boltodds": "Total Games",
+      "is_team": false,
+      "is_strike": true
+    },
+    "game_spread": {
+      "kalshi": "GSPREAD",
+      "boltodds": "Spread",
+      "is_team": true,
+      "is_strike": true
+    },
+    "team_total": {
+      "kalshi": "TEAMTOTAL",
+      "boltodds": "Team Total",
+      "is_team": true,
+      "is_strike": true
+    }
+  }
+}
