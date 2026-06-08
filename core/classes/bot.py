@@ -245,7 +245,7 @@ class Bot:
         return markets_objs_list
 
 
-    def get_markets(self) -> Dict[Market]:
+    def get_markets(self) -> Dict[str, Market]:
         return self.markets
     
 
