@@ -29,6 +29,7 @@ from blueprints.auth_bp import auth_bp
 _bot_thread_started = False
 login_manager = LoginManager()
 oauth = OAuth()
+LOGIN_REQUIRED = os.getenv("LOGIN_REQUIRED", "true") # require login by default
 
 
 @login_manager.user_loader
@@ -67,12 +68,13 @@ def create_app():
             return f"{v:.2f}"
         except (ValueError, TypeError):
             return "—"
-        
-    @app.before_request
-    def require_login():
-        allowed = {'auth.login', 'auth.callback', 'static'}
-        if request.endpoint not in allowed and not current_user.is_authenticated:
-            return redirect(url_for('auth.login'))
+    
+    if LOGIN_REQUIRED != "false":
+        @app.before_request
+        def require_login():
+            allowed = {'auth.login', 'auth.callback', 'static'}
+            if request.endpoint not in allowed and not current_user.is_authenticated:
+                return redirect(url_for('auth.login'))
 
     # socket object
     socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')

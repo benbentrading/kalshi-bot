@@ -7,20 +7,22 @@
     {% else %}
         <div class="markets-wrapper">
             {% for event_ticker, markets in grouped_markets.items() %}
+                {# sort: live markets first #}
+                {% set sorted_markets = markets | sort(attribute='trading_venue', reverse=True) %}
                 <details class="event-group" open>
                     <summary>
                         <span style="font-weight:bold">{{ group_headers[event_ticker].boltodds_id }} >> {{ group_headers[event_ticker].market_type }}</span>
                         <span style="color:#aaa; font-size:0.85em">
                             · {{ markets|length }} market{{ 's' if markets|length != 1 }}
                         </span>
+                        {% set live_count = markets | selectattr('trading_venue', 'equalto', 'prod') | list | length %}
                         <span class="live-count" style="color: #4caf50;">
-                            {% set live = markets | selectattr('trading_venue', 'equalto', 'prod') | list %}
-                            {% if live | length > 0 %} · {{ live | length }} live{% endif %}
+                            {% if live_count > 0 %} · {{ live_count }} live{% endif %}
                         </span>
                     </summary>
 
                     <div class="event-markets">
-                        {% for market in markets %}
+                        {% for market in sorted_markets %}
                             <div style="display: flex; align-items: flex-start; gap: 10px;">
                                 <div class="market {% if market.trading_venue == 'prod' %}market-live{% endif %}" id="{{ market.kalshi_ticker }}">
                                     {% if market.trading_venue == 'prod' %}
@@ -54,36 +56,36 @@
                                             <tbody>
                                                 <tr data-row="kalshi">
                                                     <td class="row-label">kalshi</td>
-                                                    <td data-field="kalshi-bid-ctx">{{ market.kalshi_yes_best_bid_ctx }}</td>
-                                                    <td data-field="kalshi-bid-px">{{ market.kalshi_yes_best_bid | format_number }}</td>
+                                                    <td data-field="kalshi-bid-ctx">{{ market.kalshi_yes_best_bid_ctx if market.kalshi_yes_best_bid_ctx is not none else '—' }}</td>
+                                                    <td data-field="kalshi-bid-px">{{ market.kalshi_yes_best_bid | format_number if market.kalshi_yes_best_bid is not none else '—' }}</td>
                                                     <td>/</td>
-                                                    <td data-field="kalshi-ask-px">{{ market.kalshi_no_best_bid | format_number(subtract_from=1) }}</td>
-                                                    <td data-field="kalshi-ask-ctx">{{ market.kalshi_no_best_bid_ctx }}</td>
-                                                    <td data-field="kalshi-updated" class="updated">{{ market.kalshi_last_update }}</td>
+                                                    <td data-field="kalshi-ask-px">{{ market.kalshi_no_best_bid | format_number(subtract_from=1) if market.kalshi_no_best_bid is not none else '—' }}</td>
+                                                    <td data-field="kalshi-ask-ctx">{{ market.kalshi_no_best_bid_ctx if market.kalshi_no_best_bid_ctx is not none else '—' }}</td>
+                                                    <td data-field="kalshi-updated" class="updated">{{ market.kalshi_last_update if market.kalshi_last_update is not none else '—' }}</td>
                                                 </tr>
                                                 <tr data-row="vegas">
                                                     <td class="row-label">vegas</td>
                                                     <td></td>
-                                                    <td data-field="vegas-bid-px">{{ market.vegas_yes_bid | format_number }}</td>
+                                                    <td data-field="vegas-bid-px">{{ market.vegas_yes_bid | format_number if market.vegas_yes_bid is not none else '—' }}</td>
                                                     <td>/</td>
-                                                    <td data-field="vegas-ask-px">{{ market.vegas_no_bid | format_number(subtract_from=1) }}</td>
+                                                    <td data-field="vegas-ask-px">{{ market.vegas_no_bid | format_number(subtract_from=1) if market.vegas_no_bid is not none else '—' }}</td>
                                                     <td></td>
-                                                    <td data-field="vegas-updated" class="updated">{{ market.boltodds_last_update }}</td>
+                                                    <td data-field="vegas-updated" class="updated">{{ market.boltodds_last_update if market.boltodds_last_update is not none else '—' }}</td>
                                                 </tr>
                                                 <tr data-row="bot">
                                                     <td class="row-label">bot</td>
-                                                    <td data-field="bot-bid-ctx">{{ market.yes_order.ctx }}</td>
-                                                    <td data-field="bot-bid-px">{{ market.yes_order.px | format_number }}</td>
+                                                    <td data-field="bot-bid-ctx">{{ market.yes_order.ctx if market.yes_order.ctx is not none else '—' }}</td>
+                                                    <td data-field="bot-bid-px">{{ market.yes_order.px | format_number if market.yes_order.px is not none else '—' }}</td>
                                                     <td>/</td>
-                                                    <td data-field="bot-ask-px">{{ market.no_order.px | format_number(subtract_from=1) }}</td>
-                                                    <td data-field="bot-ask-ctx">{{ market.no_order.ctx }}</td>
-                                                    <td data-field="bot-updated" class="updated">{{ market.kalshi_last_update }}</td>
+                                                    <td data-field="bot-ask-px">{{ market.no_order.px | format_number(subtract_from=1) if market.no_order.px is not none else '—' }}</td>
+                                                    <td data-field="bot-ask-ctx">{{ market.no_order.ctx if market.no_order.ctx is not none else '—' }}</td>
+                                                    <td data-field="bot-updated" class="updated">{{ market.kalshi_last_update if market.kalshi_last_update is not none else '—' }}</td>
                                                 </tr>
                                             </tbody>
                                         </table>
                                     </div>
 
-                                    <small data-field="last-px" class="last-px">last px: {{ market.kalshi_last_px }} at {{ market.kalshi_last_trade_time }}</small>
+                                    <small data-field="last-px" class="last-px">last px: {{ market.kalshi_last_px if market.kalshi_last_px is not none else '—' }} at {{ market.kalshi_last_trade_time if market.kalshi_last_trade_time is not none else '—' }}</small>
 
                                     <!-- controls dropdown -->
                                     <details class="market-controls">

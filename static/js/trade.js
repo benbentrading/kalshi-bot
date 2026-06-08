@@ -1,4 +1,4 @@
-
+// static/js/trade.js
 var socket = io();
 
 socket.on('connect', function() {
