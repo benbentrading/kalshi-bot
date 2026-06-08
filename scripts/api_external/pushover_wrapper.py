@@ -11,6 +11,7 @@ PUSHOVER_USER_KEY = os.getenv("PUSHOVER_USER_KEY")
 
 
 def send_notification(title: str, msg: str, priority: int = 0) -> None:
+    print(f"* PUSHOVER send_notification called *")
     try:
         response = requests.post("https://api.pushover.net/1/messages.json", data={
             "token": PUSHOVER_TOKEN,
