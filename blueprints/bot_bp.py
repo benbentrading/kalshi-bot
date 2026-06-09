@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from core.gui_handler import add_event_to_bot, remove_event_from_bot,\
     unsubscribe_all, set_market_trading_venue, set_market_max_position_ctx, \
-    cancel_all_kalshi_orders
+    cancel_all_kalshi_orders, set_setting
 from scripts.api_external.market_selection import fetch_events
 from pprint import pprint
 
@@ -104,3 +104,11 @@ def route_unsubscribe_all():
 def route_cancel_all_kalshi_orders():
     cancel_all_kalshi_orders()
     return jsonify({"status": "success", "message": "unsubscribed from all events"})
+
+
+@bot_bp.route("/set_setting", methods=["POST"])
+def route_set_setting():
+    data = request.get_json()
+    key, value = next(iter(data.items()))
+    set_setting(key, value)
+    return jsonify({"status": "success", "message": f"{key} updated to {value}"})

@@ -19,9 +19,10 @@ from scripts.db_wrapper.db_operations import insert_event
 
 
 # CONSTANTS
-DEFAULT_MAX_POSITION_CTX = 5.0
 LEAGUE_IDS, MARKET_TYPES = utils.load_universe()
-
+DEFAULT_MAX_POSITION_CTX = 5.0
+DEFAULT_MAX_SKEW_BELOW_VEGAS = 0.03
+DEFAULT_MAX_SKEW_ABOVE_VEGAS = 0.01
 
 
 @dataclass
@@ -40,6 +41,10 @@ class Bot:
     kalshi_ws_client = None
     boltodds_client = None
 
+    # settings
+    default_max_position_ctx = DEFAULT_MAX_POSITION_CTX
+    max_skew_below_vegas = DEFAULT_MAX_SKEW_BELOW_VEGAS
+    max_skew_above_vegas = DEFAULT_MAX_SKEW_ABOVE_VEGAS
 
     # -------- ws declarations --------#
     def set_clients(self, kalshi_ws_client=None, boltodds_client=None):
@@ -65,6 +70,40 @@ class Bot:
         print(f"from BOT: {text}")
         print(f"(at {current_unix})")
         print("-----------------------")
+
+
+    # -------- bot settings getters/setters ----------- #
+    def set_default_max_position_ctx(self, ctx:float):
+        if ctx <= 0:
+            print(f"cannot set default max position ctx below zero")
+            return
+        
+        self.default_max_position_ctx = ctx
+
+
+    def get_default_max_position_ctx(self):
+        return self.default_max_position_ctx
+
+
+    def set_max_vegas_skews(self, skew_below:float=None, skew_above:float=None):
+        if skew_below is not None:
+            self.max_skew_below_vegas = skew_below
+        if skew_above is not None:
+            self.max_skew_above_vegas = skew_above
+
+
+    def get_max_vegas_skews(self):
+        return self.max_skew_below_vegas, self.max_skew_above_vegas
+    
+
+    def handle_set_setting(self, key:str, value:str) -> None:
+        print(f"handle_set_setting called")
+        if key == "max_skew_below":
+            self.set_max_vegas_skews(skew_below=value)
+        elif key == "max_skew_above":
+            self.set_max_vegas_skews(skew_above=value)
+        elif key == "default_max_position_ctx":
+            self.set_default_max_position_ctx(value)
 
 
     # -------- markets functions ----------- #
@@ -116,6 +155,10 @@ class Bot:
                 boltodds_ticker += ("/" + str(kalshi_mkt_dict["floor_strike"]))
             
             market_obj = Market(
+                # settings
+                max_skew_below_vegas=self.default_max_skew_below_vegas,
+                max_skew_above_vegas=self.default_max_skew_above_vegas,
+
                 # static data
                 is_team=market_is_team,
                 team_is_p1 = team_is_p1 if market_is_team else None,

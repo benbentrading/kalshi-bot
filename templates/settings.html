@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="settings-wrapper">
+
+    <div class="setting-row">
+        <div class="setting-info">
+            <span class="setting-label">default max position ctx</span>
+            <span class="setting-desc">applied to all new markets on add</span>
+        </div>
+        <div class="setting-control">
+            <input
+                class="setting-input"
+                type="number"
+                min="0"
+                step="1"
+                id="input-default_max_position_ctx"
+                placeholder="{{ default_max_position_ctx }}"
+            >
+            <button class="setting-btn" onclick="setSetting('default_max_position_ctx')">set</button>
+            <span class="setting-current">{{ default_max_position_ctx }}</span>
+        </div>
+    </div>
+
+    <div class="setting-row">
+        <div class="setting-info">
+            <span class="setting-label">max skew below vegas</span>
+            <span class="setting-desc">max cents bot bids below vegas</span>
+        </div>
+        <div class="setting-control">
+            <input
+                class="setting-input"
+                type="number"
+                min="0"
+                step="0.01"
+                id="input-max_skew_below"
+                placeholder="{{ max_skew_below }}"
+            >
+            <button class="setting-btn" onclick="setSetting('max_skew_below')">set</button>
+            <span class="setting-current">{{ max_skew_below }}</span>
+        </div>
+    </div>
+
+    <div class="setting-row">
+        <div class="setting-info">
+            <span class="setting-label">max skew above vegas</span>
+            <span class="setting-desc">max cents bot bids above vegas</span>
+        </div>
+        <div class="setting-control">
+            <input
+                class="setting-input"
+                type="number"
+                min="0"
+                step="0.01"
+                id="input-max_skew_above"
+                placeholder="{{ max_skew_above }}"
+            >
+            <button class="setting-btn" onclick="setSetting('max_skew_above')">set</button>
+            <span class="setting-current">{{ max_skew_above }}</span>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
+<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+{% endblock %}

@@ -83,12 +83,26 @@ async def handle_cancel_all_kalshi_orders() -> None:
 
 
 def cancel_all_kalshi_orders() -> None:
-    print(f"cancel_all_kalshi_orders called in gui_handler")
     loop = get_bot_event_loop()
     if loop is None:
         print("bot event loop not set")
         return
     asyncio.run_coroutine_threadsafe(
         handle_cancel_all_kalshi_orders(),
+        loop
+    )
+
+
+async def handle_set_setting(key:str, value:str) -> None:
+    await bot.handle_set_setting(key, value)
+
+
+def set_setting(key:str, value:str) -> None:
+    loop = get_bot_event_loop()
+    if loop is None:
+        print("bot event loop not set")
+        return
+    asyncio.run_coroutine_threadsafe(
+        handle_set_setting(key, value),
         loop
     )

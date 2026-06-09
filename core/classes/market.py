@@ -19,9 +19,7 @@ from scripts.api_external.pushover_wrapper import send_notification
 ###############
 #  CONSTANTS  #
 ###############
-MIN_BID_BELOW_VEGAS = .02 # minimum cents from vegas bid
-MAX_BID_ABOVE_VEGAS = .00 # minimum cents from vegas bid
-KALSHI_ORDER_SKEW = 0
+
 LEAGUE_IDS, MARKET_TYPES = utils.load_universe()
 
 
@@ -30,6 +28,11 @@ LEAGUE_IDS, MARKET_TYPES = utils.load_universe()
 ########################
 @dataclass
 class Market:
+    # settings
+
+    max_skew_below_vegas: float
+    max_skew_above_vegas: float
+
     # generic static data
     is_strike: bool # market is a strike market (i.e. some number target)
     is_team: bool # market has to do with a team (i.e. moneyline/spread ... vs "game total" would be false)
@@ -207,12 +210,12 @@ class Market:
         if vegas_bid is None:
             return 0, 0
 
-        max_bid = vegas_bid
-        min_bid = vegas_bid - MIN_BID_BELOW_VEGAS
+        max_bid = vegas_bid + self.max_skew_above_vegas
+        min_bid = vegas_bid - self.max_skew_below_vegas
         best_bid = self.kalshi_yes_best_bid if is_yes else self.kalshi_no_best_bid
 
         bid_px = max(min_bid, min(max_bid, best_bid))
-        bid_px = max(bid_px - KALSHI_ORDER_SKEW, 0) # skew to be safe here TODO delete in prod
+        bid_px = max(bid_px, 0) # skew to be safe here TODO delete in prod
         bid_px = round(bid_px, 2) # round to 2 for now
 
         side_ctx = max(0, self.position_ctx if is_yes else -self.position_ctx)

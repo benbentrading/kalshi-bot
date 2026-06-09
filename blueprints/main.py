@@ -92,3 +92,16 @@ def trade():
         group_headers=group_headers,
         page_title="trade"
     )
+
+
+@main_bp.route("/settings")
+def route_settings():
+    default_max_position_ctx = bot.get_default_max_position_ctx()
+    max_skew_below, max_skew_above = bot.get_max_vegas_skews()
+    return render_template(
+        "settings.html",
+        page_title="settings",
+        default_max_position_ctx = default_max_position_ctx,
+        max_skew_below = max_skew_below,
+        max_skew_above = max_skew_above
+    )
