@@ -1,11 +1,15 @@
 from flask import Blueprint, request, jsonify
 from core.gui_handler import add_event_to_bot, remove_event_from_bot,\
-    unsubscribe_all, set_market_trading_venue, set_market_max_position_ctx
+    unsubscribe_all, set_market_trading_venue, set_market_max_position_ctx, \
+    cancel_all_kalshi_orders
 from scripts.api_external.market_selection import fetch_events
 from pprint import pprint
 
 bot_bp = Blueprint('bot', __name__)
 
+##################
+#  FLASK ROUTES  #
+##################
 @bot_bp.route("/add_event_to_bot", methods=["POST"])
 def route_add_event():
     data = request.get_json()
@@ -18,6 +22,7 @@ def route_add_event():
         "status": "success",
         "message": f"Added: {data.get('kalshi_title', 'Event')}"
     })
+
 
 @bot_bp.route("/remove_event_from_bot", methods=["POST"])
 def route_remove_event():
@@ -35,12 +40,6 @@ def route_remove_event():
         "status": "success",
         "message": f"removed: {kalshi_event_ticker}"
     })
-
-
-@bot_bp.route("/unsubscribe_all", methods=["POST"])
-def route_unsubscribe_all():
-    unsubscribe_all()
-    return jsonify({"status": "success", "message": "unsubscribed from all events"})
 
 
 @bot_bp.route("/get_events", methods=["GET"])
@@ -74,6 +73,7 @@ def route_set_market_trading_venue():
         "message": f"set {kalshi_market_ticker} trading venue to {trading_venue}"
     })
 
+
 @bot_bp.route("/set_market_max_position_ctx", methods=["POST"])
 def route_set_market_max_position_ctx():
     data = request.get_json()
@@ -92,3 +92,15 @@ def route_set_market_max_position_ctx():
         "status": "success",
         "message": f"set {kalshi_market_ticker} max position ctx to {ctx:.2f}"
     })
+
+
+@bot_bp.route("/unsubscribe_all", methods=["POST"])
+def route_unsubscribe_all():
+    unsubscribe_all()
+    return jsonify({"status": "success", "message": "unsubscribed from all events"})
+
+
+@bot_bp.route("/cancel_all_kalshi_orders", methods=["POST"])
+def route_cancel_all_kalshi_orders():
+    cancel_all_kalshi_orders()
+    return jsonify({"status": "success", "message": "unsubscribed from all events"})

@@ -70,6 +70,7 @@ def create_app():
             return "—"
     
     if LOGIN_REQUIRED != "false":
+        print(LOGIN_REQUIRED)
         @app.before_request
         def require_login():
             allowed = {'auth.login', 'auth.callback', 'static'}

@@ -241,6 +241,19 @@
 
 .ctx-btn:hover { background-color: #f0f0f0; }
 
+.cancel-all-btn {
+    padding: 6px 14px;
+    font-size: 0.85em;
+    border: 1px solid #c0392b;
+    border-radius: 4px;
+    color: #c0392b;
+    background: white;
+    cursor: pointer;
+}
+
+.cancel-all-btn:hover:not(:disabled) { background-color: #fdf0ef; }
+.cancel-all-btn:disabled { opacity: 0.6; cursor: default; }
+
 /* ----------------------------- */
 /*  mobile                       */
 /* ----------------------------- */

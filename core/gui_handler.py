@@ -76,3 +76,19 @@ def set_market_max_position_ctx(kalshi_market_ticker: str, ctx: float):
         handle_set_market_max_position_ctx(kalshi_market_ticker, ctx),
         loop
     )
+
+
+async def handle_cancel_all_kalshi_orders() -> None:
+    await bot.cancel_all_kalshi_orders()
+
+
+def cancel_all_kalshi_orders() -> None:
+    print(f"cancel_all_kalshi_orders called in gui_handler")
+    loop = get_bot_event_loop()
+    if loop is None:
+        print("bot event loop not set")
+        return
+    asyncio.run_coroutine_threadsafe(
+        handle_cancel_all_kalshi_orders(),
+        loop
+    )

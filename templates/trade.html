@@ -5,6 +5,20 @@
     {% if grouped_markets|length == 0 %}
         <b>no markets at this time. add some <a href="/add_event">here</a></b>
     {% else %}
+
+        {% set total_live = namespace(count=0) %}
+        {% for event_ticker, markets in grouped_markets.items() %}
+            {% set total_live.count = total_live.count + (markets | selectattr('trading_venue', 'equalto', 'prod') | list | length) %}
+        {% endfor %}
+
+        {% if total_live.count > 0 %}
+            <div style="margin-bottom: 12px;">
+                <button class="cancel-all-btn" onclick="cancelAllKalshiOrders()">
+                    kalshi OFF all orders
+                </button>
+            </div>
+        {% endif %}
+
         <div class="markets-wrapper">
             {% for event_ticker, markets in grouped_markets.items() %}
                 {# sort: live markets first #}

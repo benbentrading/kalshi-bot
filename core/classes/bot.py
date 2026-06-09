@@ -26,7 +26,6 @@ LEAGUE_IDS, MARKET_TYPES = utils.load_universe()
 
 @dataclass
 class Bot:
-
     # id/info about game the bot is trading
     kalshi_event_ticker: str = ""
     boltodds_event_id:str = ""
@@ -41,8 +40,8 @@ class Bot:
     kalshi_ws_client = None
     boltodds_client = None
 
-    # -------- ws declarations --------#
 
+    # -------- ws declarations --------#
     def set_clients(self, kalshi_ws_client=None, boltodds_client=None):
         """
         defines ws client objects (to send data)
@@ -79,7 +78,6 @@ class Bot:
         self.boltodds_client.subscribe(game_ids=[], markets=[])
 
 
-    # ----- markets: getters/setters --------#   
     def _get_market_by_kalshi_ticker(self, kalshi_ticker:str) -> Market|None:
         return self.markets.get(kalshi_ticker)
 
@@ -265,6 +263,16 @@ class Bot:
             return
         
         mkt.handle_set_max_position_ctx(ctx)
+
+
+    def cancel_all_kalshi_orders(self) -> None:
+        """
+        cancels all orders outstanding on kalshi
+        i.e. sets all markets trading venue to None
+        """
+        for ticker, mkt in self.markets.items():
+            mkt: Market
+            mkt.handle_trading_venue_update("none")
 
 
     # ----- events: getters/setters -------- #

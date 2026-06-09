@@ -134,8 +134,29 @@ function updateMarket(data) {
             return aLive - bLive;
         }).forEach(el => eventMarkets.appendChild(el));
     }
+
+    updateCancelAllButton();
 }
 
+function updateCancelAllButton() {
+    const hasLive = document.querySelectorAll('.market-live').length > 0;
+    let btn = document.querySelector('.cancel-all-btn');
+
+    if (hasLive && !btn) {
+        const wrapper = document.createElement('div');
+        wrapper.id = 'cancel-all-wrapper';
+        wrapper.style.marginBottom = '12px';
+        btn = document.createElement('button');
+        btn.className = 'cancel-all-btn';
+        btn.textContent = 'cancel all kalshi orders';
+        btn.onclick = cancelAllKalshiOrders;
+        wrapper.appendChild(btn);
+        document.querySelector('.markets-wrapper').insertAdjacentElement('beforebegin', wrapper);
+    } else if (!hasLive && btn) {
+        const wrapper = document.getElementById('cancel-all-wrapper');
+        if (wrapper) wrapper.remove();
+    }
+}
 
 
 /******************************************
@@ -193,5 +214,35 @@ async function setMaxPositionCtx(kalshiTicker) {
     } catch (err) {
         console.error(err);
         alert("connection error");
+    }
+}
+
+async function cancelAllKalshiOrders() {
+    const btn = document.querySelector('.cancel-all-btn');
+    if (!btn) return;
+
+    btn.disabled = true;
+    btn.textContent = 'cancelling...';
+
+    try {
+        const response = await fetch('/cancel_all_kalshi_orders', { method: 'POST' });
+        const result = await response.json();
+
+        if (!response.ok) {
+            alert(`error: ${result.message || 'failed to cancel orders'}`);
+            btn.disabled = false;
+            btn.textContent = 'cancel all kalshi orders';
+        } else {
+            btn.textContent = 'cancelled ✓';
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.textContent = 'cancel all kalshi orders';
+            }, 3000);
+        }
+    } catch (err) {
+        console.error(err);
+        alert('connection error');
+        btn.disabled = false;
+        btn.textContent = 'cancel all kalshi orders';
     }
 }
