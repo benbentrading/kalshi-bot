@@ -45,8 +45,8 @@ class Bot:
 
     # settings
     default_max_position_ctx = DEFAULT_MAX_POSITION_CTX
-    max_skew_below_vegas = DEFAULT_MAX_SKEW_BELOW_VEGAS
-    max_skew_above_vegas = DEFAULT_MAX_SKEW_ABOVE_VEGAS
+    default_max_skew_below_vegas = DEFAULT_MAX_SKEW_BELOW_VEGAS
+    default_max_skew_above_vegas = DEFAULT_MAX_SKEW_ABOVE_VEGAS
 
     # -------- ws declarations --------#
     def set_clients(self, kalshi_ws_client=None, boltodds_client=None):
@@ -206,10 +206,13 @@ class Bot:
 
 
     async def _set_positions_new_event(self, event_ticker:str) -> None:
+        print("SETTING NEW POSITIONS")
+        
         positions = await asyncio.to_thread(
             get_portfolio_positions,
             event_ticker=event_ticker
         )
+
         market_positions = positions["market_positions"]
         for pos in market_positions:
             kalshi_market_ticker = pos["ticker"]
@@ -368,7 +371,7 @@ class Bot:
         (len(events_market_types)) + 1 > BOLTODDS_MAX_MARKET_TYPES:
             print(f"boltodds market types count will be exceeded. cannot add event.")
             return
-
+    
 
         # create markets array from kalshi data passed
         market_objs = self._set_markets_new_event(

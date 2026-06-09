@@ -29,7 +29,6 @@ LEAGUE_IDS, MARKET_TYPES = utils.load_universe()
 @dataclass
 class Market:
     # settings
-
     max_skew_below_vegas: float
     max_skew_above_vegas: float
 
@@ -368,18 +367,19 @@ class Market:
         return round(ev, 6)
 
 
-    def handle_market_positions(self, pos_data:dict) -> None:
+    def handle_market_positions(self, pos_data: dict) -> None:
         """
         handles kalshi ws "market_positions" object
         """
-
-        # print(f"market position for {self.kalshi_ticker}")
-        # pprint(pos_data, sort_dicts=False)
 
         # dict keys shared by ws and rest endpoint json
         self.position_ctx = float(pos_data["position_fp"])
         self.realized_pnl = float(pos_data["realized_pnl_dollars"])
         self.trading_fees_paid = float(pos_data["fees_paid_dollars"])
+
+        # skip if nothing has happened in this market yet
+        if self.position_ctx == 0 and self.realized_pnl == 0 and self.trading_fees_paid == 0:
+            return
 
         # dict keys differ by ws/rest
         vlm_key = "volume_fp" if "volume_fp" in pos_data.keys() else "total_traded_dollars"
@@ -390,7 +390,7 @@ class Market:
         self.cost_basis = float(pos_data.get(cost_key, 0))
 
         self.cost_basis_per_share = 0 if self.position_ctx == 0 else \
-                                    round(self.cost_basis / abs(self.position_ctx),4)
+                                    round(self.cost_basis / abs(self.position_ctx), 4)
 
         # emit ui update
         emit_ui_update("market_update", self.to_dict())
