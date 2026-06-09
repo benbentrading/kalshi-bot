@@ -46,6 +46,12 @@ PROD_KALSHI_ACCESS_KEY= os.getenv("PROD_KALSHI_ACCESS_KEY")
 PROD_KALSHI_PRIVATE_KEY_FILE_PATH= os.getenv("PROD_KALSHI_PRIVATE_KEY_FILE_PATH")
 PROD_KALSHI_WS_BASE_URL= os.getenv("PROD_KALSHI_WS_BASE_URL")
 
+# api limits
+MAX_READ_CREDITS_PER_SECOND = 300
+MAX_WRITE_CREDITS_PER_SECOND = 300
+CREDITS_PER_READ_CALL = 10
+CREDITS_PER_WRITE_CALL = 25
+
 
 #####################
 #  FUNCTIONS: core  #
@@ -111,6 +117,50 @@ def send_api_request(method: str, api_path: str, payload: dict = None, env_overr
 
 
 ##################################
+#  TOKEN BUCKET RATE LIMITER     #
+##################################
+
+class TokenBucket:
+    """
+    Token bucket for rate limiting API calls.
+
+    Fills at `rate` credits/second up to `capacity`.
+    consume(n) waits asynchronously until n credits are available,
+    then deducts them — no call is ever dropped, just delayed.
+    """
+
+    def __init__(self, capacity: float, rate: float):
+        self._capacity = capacity       # max credits (burst ceiling)
+        self._rate = rate               # credits added per second
+        self._tokens = capacity         # start full
+        self._last_refill = time.monotonic()
+        self._lock = asyncio.Lock()
+
+    def _refill(self) -> None:
+        now = time.monotonic()
+        elapsed = now - self._last_refill
+        self._tokens = min(self._capacity, self._tokens + elapsed * self._rate)
+        self._last_refill = now
+
+    async def consume(self, credits: float) -> None:
+        """
+        Waits until `credits` tokens are available, then deducts them.
+        Sleeps in small increments so the event loop stays responsive.
+        """
+        async with self._lock:
+            while True:
+                self._refill()
+                if self._tokens >= credits:
+                    self._tokens -= credits
+                    return
+                # how long until we have enough
+                deficit = credits - self._tokens
+                wait_secs = deficit / self._rate
+                print(f"[rate limiter] waiting {wait_secs:.3f}s for {credits} write credits")
+                await asyncio.sleep(wait_secs)
+
+
+##################################
 #  BATCH QUEUE                   #
 #  batches place/cancel calls    #
 #  into single api requests.     #
@@ -131,6 +181,12 @@ class KalshiBatchQueue:
       - place:  keyed by (market_ticker, side) — latest params win
       - cancel: keyed by order_id — idempotent, same future reused if duplicate
 
+    Rate limiting:
+      - Separate token buckets for writes (place/cancel) using constants from
+        the top of this file. Each batch flush consumes CREDITS_PER_WRITE_CALL
+        credits before firing. If the bucket is empty the flush waits — no
+        calls are ever dropped.
+
     amend_order bypasses the queue entirely — no batch endpoint on Kalshi.
     """
 
@@ -144,8 +200,16 @@ class KalshiBatchQueue:
         self._cancel_queue: dict[str, dict]   = {}  # order_id -> item
         self._lock = threading.Lock()
 
+        # token buckets — one per credit pool
+        # initialised in start() once the event loop is known
+        self._write_bucket: TokenBucket = None
+
     def start(self, loop: asyncio.AbstractEventLoop) -> None:
         self._loop = loop
+        self._write_bucket = TokenBucket(
+            capacity=MAX_WRITE_CREDITS_PER_SECOND,
+            rate=MAX_WRITE_CREDITS_PER_SECOND,
+        )
         asyncio.run_coroutine_threadsafe(self._tick_loop(), self._loop)
         print("KalshiBatchQueue started")
 
@@ -227,6 +291,9 @@ class KalshiBatchQueue:
             batch = dict(self._place_queue)
             self._place_queue.clear()
 
+        # consume write credits before firing — waits if bucket is low
+        await self._write_bucket.consume(CREDITS_PER_WRITE_CALL)
+
         print(f"[batch] placing {len(batch)} orders")
 
         orders_payload = []
@@ -284,6 +351,9 @@ class KalshiBatchQueue:
                 return
             batch = dict(self._cancel_queue)
             self._cancel_queue.clear()
+
+        # consume write credits before firing — waits if bucket is low
+        await self._write_bucket.consume(CREDITS_PER_WRITE_CALL)
 
         print(f"[batch] canceling {len(batch)} orders")
 

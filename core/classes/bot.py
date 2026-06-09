@@ -23,6 +23,8 @@ LEAGUE_IDS, MARKET_TYPES = utils.load_universe()
 DEFAULT_MAX_POSITION_CTX = 5.0
 DEFAULT_MAX_SKEW_BELOW_VEGAS = 0.03
 DEFAULT_MAX_SKEW_ABOVE_VEGAS = 0.01
+BOLTODDS_MAX_LEAGUES = 1
+BOLTODDS_MAX_MARKET_TYPES = 1
 
 
 @dataclass
@@ -333,12 +335,40 @@ class Bot:
         return events_list
 
 
+    def get_events_boltodds_leagues(self) -> list:
+        return list({
+            evt["boltodds"]["league"]
+            for evt in self.events.values()
+        })
+
+
+    def get_events_boltodds_market_types(self) -> list:
+        return list({
+            evt["boltodds"]["market_type"]
+            for evt in self.events.values()
+        })
+
+
     def add_new_event(self, event_static_data:dict, kalshi_markets_data:list) -> None:
         """
         sets a new event; this function is called from GUI
         """
 
-        # print(f"SET EVENT CALLED")
+        boltodds_league = event_static_data["boltodds_league_id"]
+        boltodds_market_type = event_static_data["boltodds_market_type"]
+
+        # VALIDATE whether can subscribe
+        events_leagues = self.get_events_boltodds_leagues()
+        if boltodds_league not in events_leagues and (len(events_leagues) + 1) > BOLTODDS_MAX_LEAGUES:
+            print(f"boltodds leagues count will be exceeded. cannot add event.")
+            return
+        
+        events_market_types = self.get_events_boltodds_market_types()
+        if boltodds_market_type not in events_market_types and \
+        (len(events_market_types)) + 1 > BOLTODDS_MAX_MARKET_TYPES:
+            print(f"boltodds market types count will be exceeded. cannot add event.")
+            return
+
 
         # create markets array from kalshi data passed
         market_objs = self._set_markets_new_event(
@@ -352,8 +382,8 @@ class Bot:
             "kalshi_event_ticker": kalshi_event_ticker,
             "boltodds": {
                 "game_id": event_static_data["boltodds_id"],
-                "league": event_static_data["boltodds_league_id"],
-                "market_type": event_static_data["boltodds_market_type"]
+                "league": boltodds_league,
+                "market_type": boltodds_market_type
             },
             "market_type": event_static_data["market_type"],
             "league": event_static_data["league"],
