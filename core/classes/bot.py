@@ -89,13 +89,13 @@ class Bot:
 
     def set_max_vegas_skews(self, skew_below:float=None, skew_above:float=None):
         if skew_below is not None:
-            self.max_skew_below_vegas = skew_below
+            self.default_max_skew_below_vegas = skew_below
         if skew_above is not None:
-            self.max_skew_above_vegas = skew_above
+            self.default_max_skew_above_vegas = skew_above
 
 
     def get_max_vegas_skews(self):
-        return self.max_skew_below_vegas, self.max_skew_above_vegas
+        return self.default_max_skew_below_vegas, self.default_max_skew_above_vegas
     
 
     def handle_set_setting(self, key:str, value:str) -> None:
