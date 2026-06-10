@@ -310,7 +310,6 @@ class KalshiBatchQueue:
                 "time_in_force": "good_till_canceled",
                 "self_trade_prevention_type": "taker_at_cross",
                 "cancel_order_on_pause": False,
-                "subaccount": KALSHI_SUBACCOUNT,
             })
 
         try:

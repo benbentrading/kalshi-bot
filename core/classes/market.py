@@ -154,6 +154,8 @@ class Market:
             "kalshi_last_update": self.kalshi_last_update,
             "kalshi_last_trade_time": self.kalshi_last_trade_time,
             "kalshi_trades_count": self.kalshi_trades_count,
+            "is_settled": self.is_settled,
+            "is_canceled": self.is_canceled,
 
             # boltodds live
             "vegas_yes_bid": self.vegas_yes_bid,
