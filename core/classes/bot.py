@@ -10,6 +10,8 @@ from typing import Dict, Optional, Any, Callable, List
 from pprint import pprint
 import traceback
 from datetime import datetime, timedelta
+import os
+from dotenv import load_dotenv
 
 # local
 from core.classes.market import Market
@@ -19,7 +21,8 @@ from core.thread_bridge import emit_ui_update
 from scripts.db_wrapper.db_operations import (
     insert_event, get_unsettled_traded_tickers, insert_settlement
 )
-from scripts.api_external.kalshi_api_wrapper import get_portfolio_settlements
+from scripts.api_external.kalshi_api_wrapper import get_portfolio_settlements, KALSHI_SUBACCOUNT
+
 
 # CONSTANTS
 LEAGUE_IDS, MARKET_TYPES = utils.load_universe()
@@ -632,6 +635,9 @@ class Bot:
     def handle_kalshi_ws_data(self, kalshi_data: dict) -> None:
         data_type = kalshi_data.get("type")
         data_msg = kalshi_data.get("msg")
+
+        if data_msg.get("subaccount") != KALSHI_SUBACCOUNT:
+            return
 
         try:
             if data_type == "ticker":

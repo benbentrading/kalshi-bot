@@ -33,6 +33,7 @@ load_dotenv(f".env.{env}", override=True)
 KALSHI_API_BASE_URL = os.getenv("KALSHI_API_BASE_URL")
 KALSHI_PRIVATE_KEY_FILE_PATH = os.getenv("KALSHI_PRIVATE_KEY_FILE_PATH")
 KALSHI_ACCESS_KEY = os.getenv("KALSHI_ACCESS_KEY")
+KALSHI_SUBACCOUNT = int(os.getenv("KALSHI_SUBACCOUNT", 0))
 
 # dev environ vars
 DEV_KALSHI_API_BASE_URL= os.getenv("DEV_KALSHI_API_BASE_URL")
@@ -45,6 +46,7 @@ PROD_KALSHI_API_BASE_URL= os.getenv("PROD_KALSHI_API_BASE_URL")
 PROD_KALSHI_ACCESS_KEY= os.getenv("PROD_KALSHI_ACCESS_KEY")
 PROD_KALSHI_PRIVATE_KEY_FILE_PATH= os.getenv("PROD_KALSHI_PRIVATE_KEY_FILE_PATH")
 PROD_KALSHI_WS_BASE_URL= os.getenv("PROD_KALSHI_WS_BASE_URL")
+
 
 # api limits
 MAX_READ_CREDITS_PER_SECOND = 300
@@ -308,6 +310,7 @@ class KalshiBatchQueue:
                 "time_in_force": "good_till_canceled",
                 "self_trade_prevention_type": "taker_at_cross",
                 "cancel_order_on_pause": False,
+                "subaccount": KALSHI_SUBACCOUNT,
             })
 
         try:
@@ -484,23 +487,19 @@ def get_portfolio_positions(
 
 
 def get_portfolio_fills(
-    ticker:str=None,
-    order_id:str=None,
-    time_frame_mins_ago:int=0,
+    ticker: str = None,
+    order_id: str = None,
+    time_frame_mins_ago: int = 0,
+    subaccount: int = None,
 ) -> dict:
-    """
-    gets all executed trades (order fills)
-    if both order_id and ticker are not none, will filter by order_id
-    """
-
     path = "/portfolio/fills?"
 
-    if order_id != None:
+    if order_id is not None:
+        path += f"order_id={order_id}&"
+    elif ticker is not None:
         path += f"ticker={ticker}&"
-    elif ticker != None:
-        path += f"event_ticker={ticker}&"
-
-    min_ts = 0
+    if subaccount is not None:
+        path += f"subaccount={subaccount}&"
     if time_frame_mins_ago > 0:
         min_ts = get_unix_timestamp(time_frame_mins_ago)
         path += f"min_ts={min_ts}&"
@@ -510,8 +509,7 @@ def get_portfolio_fills(
     if response.status_code != 200:
         raise Exception(response)
 
-    fills_dict = json.loads(response.text)
-    return fills_dict
+    return json.loads(response.text)
 
 
 def get_portfolio_settlements(
@@ -544,6 +542,45 @@ def get_portfolio_settlements(
 
     settlements_dict = json.loads(response.text)
     return settlements_dict
+
+
+def create_subaccount() -> dict:
+    path = "/portfolio/subaccounts"
+    response = send_api_request(method="POST", api_path=path, payload={})
+
+    if response.status_code not in (200, 201):
+        raise Exception(response.text)
+
+    return json.loads(response.text)
+
+
+def transfer_to_subaccount(amount_cents: int, from_subaccount: int, to_subaccount: int) -> dict:
+    path = "/portfolio/subaccounts/transfer"
+    payload = {
+        "client_transfer_id": str(uuid.uuid4()),
+        "from_subaccount": from_subaccount,
+        "to_subaccount": to_subaccount,
+        "amount_cents": amount_cents,
+    }
+    response = send_api_request(method="POST", api_path=path, payload=payload)
+
+    if response.status_code not in (200, 201):
+        raise Exception(response.text)
+
+    return json.loads(response.text)
+
+
+def get_subaccount_balances() -> dict:
+    """
+    gets balances for all subaccounts including primary (0).
+    """
+    path = "/portfolio/subaccounts/balances"
+    response = send_api_request(method="GET", api_path=path)
+
+    if response.status_code != 200:
+        raise Exception(response.text)
+
+    return json.loads(response.text)
 
 
 ################################
@@ -729,6 +766,15 @@ def cancel_order(order_id: str, market_ticker:str="", side:str="") -> dict:
 
 
 if __name__ == "__main__":
-    ticker = "KXMLBTEAMTOTAL-26JUN072030SFCHC-SF5"
-    jsn = get_portfolio_settlements(ticker=ticker)
-    pprint(jsn)
+
+    # create subaccount (do once)
+    # result = create_subaccount()
+    # pprint(result)
+
+    result = transfer_to_subaccount(
+        amount_cents=50000,
+        from_subaccount=2,
+        to_subaccount=0
+    )
+
+    pprint(get_subaccount_balances())
