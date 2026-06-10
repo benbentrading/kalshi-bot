@@ -636,9 +636,6 @@ class Bot:
         data_type = kalshi_data.get("type")
         data_msg = kalshi_data.get("msg")
 
-        if data_msg.get("subaccount") != KALSHI_SUBACCOUNT:
-            return
-
         try:
             if data_type == "ticker":
                 self._handle_kalshi_ws_ticker(data_msg)
