@@ -72,6 +72,8 @@ class Market:
     kalshi_last_update: float = 0.0
     kalshi_last_trade_time: int = 0
     kalshi_trades_count: int = 0
+    is_settled: bool = False
+    is_canceled: bool = False
 
     # boltodds live data
     vegas_yes_bid: int = None
@@ -204,6 +206,10 @@ class Market:
         NOTE this is the function that determines the logic of the bot
         returns px, cts of yes market
         """
+
+        # if market is settled or canceled, just return
+        if self.is_settled or self.is_canceled:
+            return 0, 0
         
         vegas_bid = self.vegas_yes_bid if is_yes else self.vegas_no_bid
         if vegas_bid is None:
@@ -248,6 +254,8 @@ class Market:
         """
         called post data update on market attrs
         """
+        if self.is_settled or self.is_canceled:
+            return
         asyncio.create_task(self._update_orders())
 
 

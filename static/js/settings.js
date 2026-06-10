@@ -35,3 +35,27 @@ async function setSetting(key) {
         btn.textContent = 'set';
     }
 }
+
+async function reconcileSettlements() {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = '...';
+
+    try {
+        const response = await fetch('/reconcile_settlements', { method: 'POST' });
+        const result = await response.json();
+        if (!response.ok) {
+            alert(`error: ${result.message || 'failed'}`);
+        } else {
+            btn.textContent = 'done ✓';
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.textContent = 'run';
+            }, 3000);
+        }
+    } catch (err) {
+        alert('connection error');
+        btn.disabled = false;
+        btn.textContent = 'run';
+    }
+}

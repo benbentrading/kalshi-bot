@@ -106,3 +106,18 @@ def set_setting(key:str, value:str) -> None:
         handle_set_setting(key, value),
         loop
     )
+
+
+async def handle_reconcile_settlements() -> None:
+    await bot.reconcile_settlements()
+
+
+def reconcile_settlements() -> None:
+    loop = get_bot_event_loop()
+    if loop is None:
+        print("bot event loop not set")
+        return
+    asyncio.run_coroutine_threadsafe(
+        handle_reconcile_settlements(),
+        loop
+    )

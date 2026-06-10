@@ -23,9 +23,9 @@ from scripts.api_external.kalshi_api_wrapper import get_portfolio_settlements
 
 # CONSTANTS
 LEAGUE_IDS, MARKET_TYPES = utils.load_universe()
-DEFAULT_MAX_POSITION_CTX = 5.0
+DEFAULT_MAX_POSITION_CTX = 10.0
 DEFAULT_MAX_SKEW_BELOW_VEGAS = 0.03
-DEFAULT_MAX_SKEW_ABOVE_VEGAS = 0.01
+DEFAULT_MAX_SKEW_ABOVE_VEGAS = 0.00
 BOLTODDS_MAX_LEAGUES = 1
 BOLTODDS_MAX_MARKET_TYPES = 1
 
@@ -578,6 +578,57 @@ class Bot:
         mkt.handle_market_positions(msg)
 
 
+    def _handle_kalshi_ws_market_lifecycle(self, msg: dict) -> None:
+        """
+        handles market_lifecycle_v2 ws events.
+        on settled/canceled: stops trading, flags the market, records settlement.
+        market stays in bot.events for UI visibility and settlement tracking.
+        """
+        ticker = msg.get("market_ticker")
+        status = msg.get("status")
+
+        if ticker is None or status is None:
+            return
+
+        mkt = self._get_market_by_kalshi_ticker(ticker)
+        if mkt is None:
+            print(f"[lifecycle] received {status} for unknown market {ticker} — ignoring")
+            return
+
+        print(f"[lifecycle] {ticker} → {status}")
+
+        if status == "settled":
+            mkt.is_settled = True
+            mkt.handle_trading_venue_update("none")
+            asyncio.create_task(self._reconcile_single_ticker(ticker))
+            emit_ui_update("market_update", mkt.to_dict())
+
+        elif status in ("canceled", "voided"):
+            mkt.is_canceled = True
+            mkt.handle_trading_venue_update("none")
+            emit_ui_update("market_update", mkt.to_dict())
+
+        elif status == "closed":
+            # market stopped accepting new orders but not yet settled
+            # cancel resting orders but don't flag as settled yet
+            mkt.handle_trading_venue_update("none")
+            emit_ui_update("market_update", mkt.to_dict())
+
+
+    async def _reconcile_single_ticker(self, ticker: str) -> None:
+        """
+        fetches and stores settlement record for a single ticker.
+        called immediately when lifecycle event fires for a settled market.
+        """
+        try:
+            result = await asyncio.to_thread(get_portfolio_settlements, ticker=ticker)
+            for s in result.get("settlements", []):
+                insert_settlement(s)
+            print(f"[lifecycle] settlement recorded for {ticker}")
+        except Exception as e:
+            print(f"[lifecycle] error reconciling {ticker}: {e}")
+
+
     def handle_kalshi_ws_data(self, kalshi_data: dict) -> None:
         data_type = kalshi_data.get("type")
         data_msg = kalshi_data.get("msg")
@@ -598,6 +649,8 @@ class Bot:
             elif data_type == "ok":
                 tickers = kalshi_data.get("market_tickers", [])
                 self._write(f"kalshi ok ack for {len(tickers)} markets")
+            elif data_type == "market_lifecycle_v2":
+                self._handle_kalshi_ws_market_lifecycle(data_msg)
             else:
                 print(f"received kalshi ws data with type {data_type} (doing nothing)")
 

@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from core.gui_handler import add_event_to_bot, remove_event_from_bot,\
     unsubscribe_all, set_market_trading_venue, set_market_max_position_ctx, \
-    cancel_all_kalshi_orders, set_setting
+    cancel_all_kalshi_orders, set_setting, reconcile_settlements
 from scripts.api_external.market_selection import fetch_events
 from pprint import pprint
 
@@ -112,3 +112,8 @@ def route_set_setting():
     key, value = next(iter(data.items()))
     set_setting(key, value)
     return jsonify({"status": "success", "message": f"{key} updated to {value}"})
+
+@bot_bp.route("/reconcile_settlements", methods=["POST"])
+def route_reconcile_settlements():
+    reconcile_settlements()
+    return jsonify({"status": "success", "message": "settlement reconciliation started"})

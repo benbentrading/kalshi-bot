@@ -40,7 +40,7 @@ class KalshiWsClient:
         self.websocket = None
 
         self.market_tickers = []
-        self.CHANNELS = ["ticker", "trade", "market_positions"]
+        self.CHANNELS = ["ticker", "trade", "market_positions", "market_lifecycle_v2"]
         self.channel_sids = {}
 
     # ---------- PUBLIC API ----------
