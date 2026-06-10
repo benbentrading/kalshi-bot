@@ -2,7 +2,7 @@
 import sqlite3
 import time
 from scripts.db_wrapper.db_setup import get_conn
-
+from datetime import datetime
 
 #################
 #    TRADES     #
@@ -182,3 +182,83 @@ def get_events() -> list:
             "SELECT * FROM events ORDER BY ts_ms DESC"
         ).fetchall()
         return [dict(r) for r in rows]
+    
+
+#################
+#  settlements  #
+#################
+
+def insert_settlement(s: dict) -> None:
+    """
+    inserts a settlement record from the kalshi settlements endpoint.
+    INSERT OR IGNORE — ticker is primary key, safe to call multiple times.
+    """
+    yes_payout = float(s["value"]) / 100
+    no_payout  = 1 - yes_payout
+    gross      = (float(s["yes_count_fp"]) * yes_payout) + (float(s["no_count_fp"]) * no_payout)
+    cost       = float(s["yes_total_cost_dollars"]) + float(s["no_total_cost_dollars"])
+    fee        = float(s["fee_cost"])
+    net_pnl    = gross - cost - fee
+
+    with get_conn() as conn:
+        conn.execute("""
+            INSERT OR IGNORE INTO settlements (
+                ticker, event_ticker, market_result,
+                yes_count_fp, no_count_fp,
+                yes_total_cost, no_total_cost,
+                revenue, fee_cost, value,
+                settled_ts_ms, net_pnl
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            s["ticker"],
+            s["event_ticker"],
+            s["market_result"],
+            float(s["yes_count_fp"]),
+            float(s["no_count_fp"]),
+            float(s["yes_total_cost_dollars"]),
+            float(s["no_total_cost_dollars"]),
+            int(s["revenue"]),
+            fee,
+            int(s["value"]),
+            int(datetime.fromisoformat(s["settled_time"].replace("Z", "+00:00")).timestamp() * 1000),
+            net_pnl,
+        ))
+
+
+def get_settlements(ticker: str = None, event_ticker: str = None) -> list:
+    with get_conn() as conn:
+        if ticker:
+            rows = conn.execute(
+                "SELECT * FROM settlements WHERE ticker = ?",
+                (ticker,)
+            ).fetchall()
+        elif event_ticker:
+            rows = conn.execute(
+                "SELECT * FROM settlements WHERE event_ticker = ? ORDER BY settled_ts_ms DESC",
+                (event_ticker,)
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT * FROM settlements ORDER BY settled_ts_ms DESC"
+            ).fetchall()
+        return [dict(r) for r in rows]
+
+
+def get_unsettled_traded_tickers(since_ts_ms: int = None) -> list[str]:
+    """
+    returns market tickers that appear in trades but not in settlements.
+    used for startup reconciliation.
+    """
+    with get_conn() as conn:
+        if since_ts_ms:
+            rows = conn.execute("""
+                SELECT DISTINCT kalshi_market_ticker FROM trades
+                WHERE kalshi_market_ticker NOT IN (SELECT ticker FROM settlements)
+                AND ts_ms >= ?
+            """, (since_ts_ms,)).fetchall()
+        else:
+            rows = conn.execute("""
+                SELECT DISTINCT kalshi_market_ticker FROM trades
+                WHERE kalshi_market_ticker NOT IN (SELECT ticker FROM settlements)
+            """).fetchall()
+        return [r["kalshi_market_ticker"] for r in rows]

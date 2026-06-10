@@ -69,6 +69,23 @@ def init_db() -> None:
                 league                  TEXT
             );
 
+                           
+
+            CREATE TABLE IF NOT EXISTS settlements (
+                ticker                  TEXT PRIMARY KEY,
+                event_ticker            TEXT,
+                market_result           TEXT,
+                yes_count_fp            REAL,
+                no_count_fp             REAL,
+                yes_total_cost          REAL,
+                no_total_cost           REAL,
+                revenue                 INTEGER,
+                fee_cost                REAL,
+                value                   INTEGER,
+                settled_ts_ms           INTEGER,   -- changed from settled_time TEXT
+                net_pnl                 REAL,
+                created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
         """)
 
     print(f"db initialized at {DB_PATH}")

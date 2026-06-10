@@ -514,10 +514,36 @@ def get_portfolio_fills(
     return fills_dict
 
 
-def get_order():
+def get_portfolio_settlements(
+    ticker: str = None,
+    event_ticker: str = None,
+    min_ts: int = None,
+    max_ts: int = None,
+) -> dict:
     """
-    TODO implement
+    gets settlement history for the account
+    filter by ticker or event_ticker (not both)
+    filter by time range with min_ts / max_ts (unix timestamps)
     """
+
+    path = "/portfolio/settlements?"
+
+    if ticker is not None:
+        path += f"ticker={ticker}&"
+    elif event_ticker is not None:
+        path += f"event_ticker={event_ticker}&"
+    if min_ts is not None:
+        path += f"min_ts={min_ts}&"
+    if max_ts is not None:
+        path += f"max_ts={max_ts}&"
+
+    response = send_api_request(method="GET", api_path=path)
+
+    if response.status_code != 200:
+        raise Exception(response)
+
+    settlements_dict = json.loads(response.text)
+    return settlements_dict
 
 
 ################################
@@ -700,19 +726,9 @@ def cancel_order(order_id: str, market_ticker:str="", side:str="") -> dict:
     )
 
 
+
+
 if __name__ == "__main__":
-    ticker = "KXMLBTEAMTOTAL-26JUN042140LADAZ-AZ4"
-    path = "/portfolio/events/orders/batched"
-    payload = {"orders": [{
-        "ticker": ticker,
-        "client_order_id": str(uuid.uuid4()),
-        "side": "bid",
-        "count": "1",
-        "price": "0.01",
-        "time_in_force": "good_till_canceled",
-        "self_trade_prevention_type": "taker_at_cross",
-        "cancel_order_on_pause": False,
-    }]}
-    response = send_api_request(method="POST", api_path=path, payload=payload)
-    print(response.status_code)
-    print(response.text)
+    ticker = "KXMLBTEAMTOTAL-26JUN072030SFCHC-SF5"
+    jsn = get_portfolio_settlements(ticker=ticker)
+    pprint(jsn)

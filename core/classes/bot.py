@@ -9,14 +9,17 @@ from dataclasses import dataclass, field
 from typing import Dict, Optional, Any, Callable, List
 from pprint import pprint
 import traceback
+from datetime import datetime, timedelta
 
 # local
 from core.classes.market import Market
 import scripts.utils as utils
 from scripts.api_external.kalshi_api_wrapper import get_portfolio_positions
 from core.thread_bridge import emit_ui_update
-from scripts.db_wrapper.db_operations import insert_event
-
+from scripts.db_wrapper.db_operations import (
+    insert_event, get_unsettled_traded_tickers, insert_settlement
+)
+from scripts.api_external.kalshi_api_wrapper import get_portfolio_settlements
 
 # CONSTANTS
 LEAGUE_IDS, MARKET_TYPES = utils.load_universe()
@@ -99,7 +102,6 @@ class Bot:
     
 
     def handle_set_setting(self, key:str, value:str) -> None:
-        print(f"handle_set_setting called")
         if key == "max_skew_below":
             self.set_max_vegas_skews(skew_below=value)
         elif key == "max_skew_above":
@@ -322,6 +324,32 @@ class Bot:
             mkt: Market
             mkt.handle_trading_venue_update("none")
 
+
+    async def reconcile_settlements(self) -> None:
+        """
+        called on startup or manually from GUI.
+        fetches settlements for any traded markets not yet in the db.
+        idempotent — safe to call multiple times.
+        """
+        since_ts_ms = int((datetime.now() - timedelta(days=30)).timestamp() * 1000)
+        unsettled_tickers = get_unsettled_traded_tickers(since_ts_ms=since_ts_ms)
+
+        if not unsettled_tickers:
+            print("[reconcile_settlements] nothing to reconcile")
+            return
+
+        print(f"[reconcile_settlements] reconciling {len(unsettled_tickers)} tickers")
+
+        for ticker in unsettled_tickers:
+            try:
+                result = await asyncio.to_thread(get_portfolio_settlements, ticker=ticker)
+                for s in result.get("settlements", []):
+                    insert_settlement(s)
+                print(f"[reconcile_settlements] {ticker} done")
+            except Exception as e:
+                print(f"[reconcile_settlements] error on {ticker}: {e}")
+
+        print(f"[reconcile_settlements] complete")
 
     # ----- events: getters/setters -------- #
     def get_all_events_list(self) -> dict:
