@@ -64,12 +64,13 @@ class Bot:
 
 
     def _subscribe_tickers_ws(self, kalshi_market_tickers: list,
-                               boltodds_ids: list, boltodds_market_types: list):
+                               boltodds_ids: list, boltodds_market_types: list,
+                               boltodds_leagues:list):
         if self.kalshi_ws_client:
             self.kalshi_ws_client.resubscribe(kalshi_market_tickers)
 
         if self.boltodds_client:
-            self.boltodds_client.subscribe(game_ids=boltodds_ids, markets=boltodds_market_types)
+            self.boltodds_client.subscribe(game_ids=boltodds_ids, markets=boltodds_market_types, leagues=boltodds_leagues)
 
     # ----- misc functions --------#
     def _write(self, text:str) -> None:
@@ -121,7 +122,7 @@ class Bot:
 
         # unsubscribe from ws
         self.kalshi_ws_client.unsubscribe_all()
-        self.boltodds_client.subscribe(game_ids=[], markets=[])
+        self.boltodds_client.subscribe(game_ids=[], markets=[], leagues=[])
 
 
     def _get_market_by_kalshi_ticker(self, kalshi_ticker:str) -> Market|None:
@@ -478,18 +479,23 @@ class Bot:
         boltodds_game_ids = []
         boltodds_market_types = []
         market_objects = []
+        boltodds_leagues = []
         for k, evt in self.events.items():
             boltodds_game_id = evt["boltodds"]["game_id"]
             boltodds_market_type = evt["boltodds"]["market_type"]
+            boltodds_league = evt["boltodds"]["league"]
             if boltodds_game_id not in boltodds_game_ids:
                 boltodds_game_ids.append(boltodds_game_id)
             if boltodds_market_type not in boltodds_market_types:
                 boltodds_market_types.append(boltodds_market_type)
+            if boltodds_league not in boltodds_leagues:
+                boltodds_leagues.append(boltodds_league)
         
         self._subscribe_tickers_ws(
             kalshi_market_tickers=kalshi_market_tickers,
             boltodds_ids=boltodds_game_ids,
-            boltodds_market_types=boltodds_market_types
+            boltodds_market_types=boltodds_market_types,
+            boltodds_leagues=boltodds_leagues
         )
 
 

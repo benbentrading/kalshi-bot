@@ -47,6 +47,7 @@ class BoltClient:
         
         self.game_ids: List[str] = []
         self.markets: List[str] = []
+        self.leagues: List[str] = []
 
 
     # ---------- PUBLIC API ----------
@@ -64,21 +65,26 @@ class BoltClient:
         print("BoltClient stopped")
 
 
-    def subscribe(self, game_ids:list, markets: list):
+    def subscribe(self, game_ids:list, markets:list, leagues:list):
         """Send (or update) a subscription on the live socket."""
         self.game_ids = game_ids if isinstance(game_ids, list) else [game_ids]
         self.markets = markets if isinstance(markets, list) else [markets]
+        self.leagues = leagues if isinstance(leagues, list) else [leagues]
         five_min_ago_unix = get_unix_timestamp(minutes_ago=5)
 
         if self.started == False or self.last_subscribe < five_min_ago_unix: # first start
-            self.command_queue.put_nowait({
+            print(f"subscribing to {self.game_ids} {self.markets}")
+            msg = {
                 "action": "subscribe",
                 "filters": {
+                    "sports": self.leagues,
                     "sportsbooks": [VEGAS_ODDS_SOURCE],
                     "games": self.game_ids,
                     "markets": self.markets
                 }
-            })
+            }
+            pprint(msg, sort_dicts=False)
+            self.command_queue.put_nowait(msg)
         else:
             asyncio.create_task(self._reconnect())
 
@@ -143,11 +149,13 @@ class BoltClient:
         msg = {
             "action": "subscribe",
             "filters": {
+                "sports": self.leagues,
                 "sportsbooks": [VEGAS_ODDS_SOURCE],
                 "games": self.game_ids,
                 "markets": self.markets
             }
         }
+        pprint(msg, sort_dicts=False)
         await self.command_queue.put(msg)
 
 
@@ -156,6 +164,7 @@ class BoltClient:
             try:
                 cmd = await self.command_queue.get()
                 # print(f"boltodds sending: {cmd}")
+                pprint(cmd, sort_dicts=False)
                 await websocket.send(json.dumps(cmd))
             except websockets.exceptions.ConnectionClosed as e:
                 print(f"boltodds send loop connection closed: {e}")
