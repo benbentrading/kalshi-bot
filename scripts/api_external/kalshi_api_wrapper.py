@@ -305,7 +305,7 @@ class KalshiBatchQueue:
                 "ticker": item["market_ticker"],
                 "client_order_id": item["client_order_id"],
                 "side": "bid" if item["side"] == "yes" else "ask",
-                "count": str(item["ctx"]),
+                "count": f"{float(item['ctx']):.2f}",  # always exactly 2 decimal places
                 "price": f"{yes_px / 100:.2f}",
                 "time_in_force": "good_till_canceled",
                 "self_trade_prevention_type": "taker_at_cross",
