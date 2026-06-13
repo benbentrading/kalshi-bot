@@ -321,8 +321,8 @@ class Order:
         if order_id != self.kalshi_order_id:
             return
 
-            self.ctx = round(float(new_ctx), 2)
-            self.kalshi_ctx = round(float(new_ctx), 2)
+        self.ctx = round(float(new_ctx), 2)
+        self.kalshi_ctx = round(float(new_ctx), 2)
 
         if self.ctx == 0:
             self.kalshi_order_id = None

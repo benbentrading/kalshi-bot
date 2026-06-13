@@ -90,6 +90,8 @@ class Market:
     cost_basis: float = 0.0
     cost_basis_per_share: float = 0.0
     cumulative_ev: float = 0.0
+    _processed_trade_ids: set = field(default_factory=set)
+
 
     # orders — set in __post_init__
     trading_venue: TradingVenue = TradingVenue.NONE
@@ -303,6 +305,14 @@ class Market:
         trade_px = float(trade_yes_px) if side == "yes" else round(1-float(trade_yes_px), 4)
         subaccount = msg["subaccount"]
         position = float(msg["post_position_fp"])
+        
+        # dedup guard
+        trade_id = msg.get("trade_id")
+        if trade_id and trade_id in self._processed_trade_ids:
+            print(f"duplicate fill ignored: {trade_id}")
+            return
+        if trade_id:
+            self._processed_trade_ids.add(trade_id)
 
         trade_ev = Market.compute_ev(msg, self.vegas_yes_bid, self.vegas_no_bid)
         self.position_ctx = position

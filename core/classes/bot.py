@@ -27,7 +27,7 @@ from scripts.api_external.kalshi_api_wrapper import get_portfolio_settlements, K
 # CONSTANTS
 LEAGUE_IDS, MARKET_TYPES = utils.load_universe()
 DEFAULT_MAX_POSITION_CTX = 10.0
-DEFAULT_MAX_SKEW_BELOW_VEGAS = 0.01
+DEFAULT_MAX_SKEW_BELOW_VEGAS = 0.0
 DEFAULT_MAX_SKEW_ABOVE_VEGAS = 0.01
 BOLTODDS_MAX_LEAGUES = 1
 BOLTODDS_MAX_MARKET_TYPES = 1
@@ -542,6 +542,7 @@ class Bot:
 
         if mkt is None:
             print(f"received kalshi ws trade for unknown market {ticker}")
+            return
 
         old_last_px = mkt.kalshi_last_px
         
